@@ -1,0 +1,1378 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>(Not Just Another) Investment Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- URL configuration constant -->
+    <script>
+        // API configuration - default 'api/msci-proxy.php'
+        const MSCI_PROXY_BASE_URL = 'https://www.berndneeser.de/wp-content/uploads/njaic-demo/msci-proxy.php';
+    </script>
+    <style>
+        :root {
+            /* Dark mode (default) */
+            --bg: #0a0a0a;
+            --text: #e5e5e5;
+            --text-strong: #ffffff;
+            --text-muted: #808080;
+            --text-label: #a3a3a3;
+            --card-bg: #141414;
+            --card-border: #262626;
+            --input-bg: #0a0a0a;
+            --input-border: #333333;
+            --row-hover: #1a1a1a;
+            --border-row: #1a1a1a;
+            --border-head: #262626;
+            --accent: #c9a227;
+            --accent-contrast: #0a0a0a;
+            --code-bg: #1a1a1a;
+            --option-bg: #141414;
+            --icon-muted: #4a4a4a;
+            --delete-hover-bg: #2a1515;
+            --shadow-focus: rgba(201, 162, 39, 0.15);
+            --date-filter: invert(0.8);
+        }
+
+        [data-theme="light"] {
+            --bg: #f8f9fa;
+            --text: #2d3748;
+            --text-strong: #1a202c;
+            --text-muted: #718096;
+            --text-label: #4a5568;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --input-bg: #ffffff;
+            --input-border: #e2e8f0;
+            --row-hover: #f8fafc;
+            --border-row: #edf2f7;
+            --border-head: #e2e8f0;
+            --accent: #c9a227;
+            --accent-contrast: #ffffff;
+            --code-bg: #edf2f7;
+            --option-bg: #ffffff;
+            --icon-muted: #cbd5e0;
+            --delete-hover-bg: #fed7d7;
+            --shadow-focus: rgba(201, 162, 39, 0.15);
+            --date-filter: none;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px 16px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-strong);
+            margin-bottom: 4px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1100px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            padding: 20px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-strong);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title::before {
+            content: '';
+            width: 3px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-head);
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-row);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: var(--row-hover);
+        }
+
+        input[type="date"],
+        input[type="number"],
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-family: inherit;
+            background: var(--input-bg);
+            color: var(--text);
+            transition: all 0.2s;
+        }
+
+        input[type="date"]:focus,
+        input[type="number"]:focus,
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--shadow-focus);
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: var(--date-filter);
+        }
+
+        .type-select {
+            width: 90px;
+            cursor: pointer;
+        }
+
+        .type-select.pay-in {
+            color: #22c55e;
+            font-weight: 500;
+        }
+
+        .type-select.pay-out {
+            color: #f97316;
+            font-weight: 500;
+        }
+
+        .amount-input {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .amount-pay-in {
+            color: #22c55e;
+        }
+
+        .amount-pay-out {
+            color: #f97316;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--icon-muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            color: #ef4444;
+            background: var(--delete-hover-bg);
+        }
+
+        .add-row-btn {
+            margin-top: 14px;
+            padding: 8px 16px;
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-row-btn:hover {
+            background: var(--accent);
+            color: var(--accent-contrast);
+        }
+
+        /* KPI Styles */
+        .kpi-grid {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .kpi-item {
+            background: var(--bg);
+            border-radius: 6px;
+            padding: 12px;
+            border-left: 2px solid var(--accent);
+            min-height: 70px;
+            transition: background 0.2s;
+        }
+
+        .kpi-item:nth-child(2) { border-left-color: #a3a3a3; }
+        .kpi-item:nth-child(3) { border-left-color: #22c55e; }
+        .kpi-item:nth-child(4) { border-left-color: #3b82f6; }
+        .kpi-item:nth-child(5) { border-left-color: #f97316; }
+        .kpi-item:nth-child(6) { border-left-color: #8b5cf6; }
+        .kpi-item:nth-child(7) { border-left-color: #ec4899; }
+
+        .kpi-label {
+            font-size: 0.65rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+
+        .kpi-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-strong);
+            font-variant-numeric: tabular-nums;
+            line-height: 1.2;
+        }
+
+        .kpi-value.positive {
+            color: #22c55e;
+        }
+
+        .kpi-value.negative {
+            color: #ef4444;
+        }
+
+        .kpi-value.n/a {
+            color: var(--text-muted);
+        }
+
+        /* Upload Section */
+        .upload-section {
+            margin-top: 20px;
+        }
+
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: transparent;
+            color: #22c55e;
+            border: 1px solid #22c55e;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-btn:hover {
+            background: #22c55e;
+            color: var(--accent-contrast);
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .download-btn:hover {
+            background: var(--accent);
+            color: var(--accent-contrast);
+        }
+
+        .upload-info {
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: var(--bg);
+            border-radius: 4px;
+            border: 1px solid var(--card-border);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .upload-info code {
+            background: var(--code-bg);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.7rem;
+            color: var(--accent);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        /* Currency Selector */
+        .currency-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .currency-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-label);
+        }
+
+        .currency-select {
+            width: 70px;
+            cursor: pointer;
+        }
+
+        .separator-select {
+            width: 80px;
+            cursor: pointer;
+        }
+
+        select option {
+            background: var(--option-bg);
+            color: var(--text);
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .theme-toggle svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .theme-toggle .icon-sun {
+            display: none;
+        }
+
+        [data-theme="light"] .theme-toggle .icon-sun {
+            display: block;
+        }
+
+        [data-theme="light"] .theme-toggle .icon-moon {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark / light mode" aria-label="Toggle dark / light mode">
+                <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+            <h1>(Not Just Another) Investment Calculator</h1>
+            <p class="subtitle">Calculate your investment returns and performance. Benchmark against money market accounts with annual compound interest and MSCI ACWI.<br>Works for all asset classes.</p>
+        </header>
+
+        <div class="main-content">
+            <div class="card">
+                <h2 class="card-title">Payment Entries</h2>
+
+                <div class="currency-row">
+                    <span class="currency-label">Currency:</span>
+                    <select id="currency" class="currency-select">
+                        <option value="EUR" selected>EUR</option>
+                        <option value="USD">USD</option>
+                        <option value="GBP">GBP</option>
+                        <option value="CHF">CHF</option>
+                        <option value="JPY">JPY</option>
+                    </select>
+                    <span class="currency-label">Decimal separator:</span>
+                    <select id="decimal-separator" class="separator-select">
+                        <option value="," selected>,</option>
+                        <option value=".">.</option>
+                    </select>
+                    <span class="currency-label">Thousands separator:</span>
+                    <select id="thousands-separator" class="separator-select">
+                        <option value="." selected>.</option>
+                        <option value=",">,</option>
+                        <option value=" ">Space</option>
+                        <option value="">None</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table id="entries-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">Type</th>
+                                <th style="width: 150px;">Date of Payment</th>
+                                <th style="width: 150px;">Amount</th>
+                                <th style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="entries-body">
+                        </tbody>
+                    </table>
+                </div>
+
+                <button class="add-row-btn" onclick="addEntry()">+ Add Entry</button>
+
+                <div class="upload-section">
+                    <input type="file" id="file-input" accept=".xls,.xlsx" onchange="handleFileUpload(event)">
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                        <button class="upload-btn" onclick="document.getElementById('file-input').click()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Upload Data
+                        </button>
+                        <button class="download-btn" onclick="downloadData()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Download Data
+                        </button>
+                        <select id="download-format" class="separator-select" title="Download format">
+                            <option value="xlsx" selected>.xlsx</option>
+                            <option value="xls">.xls</option>
+                        </select>
+                    </div>
+                    <div class="upload-info">
+                        <strong>Expected format:</strong><br>
+                        <code>Date, Amount</code><br>
+                        • First column: Payment date (e.g., 10.03.2025 or 2025-03-10)<br>
+                        • Second column: Amount (positive = Pay In, negative = Pay Out)<br>
+                        • Supports Excel files (.xls, .xlsx)
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Key Performance Indicators &amp; Benchmarks</h2>
+                <div class="kpi-grid">
+                    <div class="kpi-item">
+                        <div class="kpi-label">Investment Start Date</div>
+                        <div class="kpi-value" id="kpi-start-date">-</div>
+                    </div>
+                    <div class="kpi-item">
+                        <div class="kpi-label">Investment End Date</div>
+                        <div class="kpi-value" id="kpi-end-date">-</div>
+                    </div>
+                    <div class="kpi-item">
+                        <div class="kpi-label">Investment Period</div>
+                        <div class="kpi-value" id="kpi-period">- years</div>
+                    </div>
+                    <div class="kpi-item">
+                        <div class="kpi-label">Average Capital Commitment</div>
+                        <div class="kpi-value" id="kpi-avg-capital">- <span class="currency-display">EUR</span></div>
+                    </div>
+                    <div class="kpi-item">
+                        <div class="kpi-label">Total Return</div>
+                        <div class="kpi-value" id="kpi-total-return">- <span class="currency-display">EUR</span></div>
+                    </div>
+                    <div class="kpi-item">
+                        <div class="kpi-label">Total Return %</div>
+                        <div class="kpi-value" id="kpi-total-return-pct">-%</div>
+                    </div>
+                    <div class="kpi-item">
+                        <div class="kpi-label">Imputed Annual Return (CAGR)</div>
+                        <div class="kpi-value" id="kpi-annual-return">-%</div>
+                    </div>
+                    <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid var(--border-row); margin: 16px 0;">
+                    <div class="kpi-item">
+                        <div class="kpi-label">Imputed Annual Return (CAGR) MSCI ACWI in same Period</div>
+                        <div class="kpi-value" id="kpi-benchmark-cagr">n/a</div>
+                    </div>
+                    <div class="kpi-item">
+                        <div class="kpi-label">MSCI ACWI Price at Investment Start Date</div>
+                        <div class="kpi-value" id="kpi-start-price">-</div>
+                    </div>
+                    <div class="kpi-item">
+                        <div class="kpi-label">MSCI ACWI Price at Investment End Date</div>
+                        <div class="kpi-value" id="kpi-end-price">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        let entries = [];
+        let entryId = 0;
+        let msciData = null;
+
+        // Helper function to format numbers as USD currency
+        function formatNumber(value, decimals = 2) {
+            if (!Number.isFinite(value)) return '-';
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: decimals
+            }).format(value);
+        }
+
+        // Theme handling – dark is default, light is opt-in via [data-theme="light"]
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+        }
+
+        function toggleTheme() {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            const next = isLight ? 'dark' : 'light';
+            applyTheme(next);
+            try {
+                localStorage.setItem('investment-calc-theme', next);
+            } catch (e) { /* ignore storage errors */ }
+        }
+
+        try {
+            const saved = localStorage.getItem('investment-calc-theme');
+            applyTheme(saved === 'light' ? 'light' : 'dark');
+        } catch (e) {
+            applyTheme('dark');
+        }
+
+        // Get the earliest date from entries (as a Date object)
+        function getStartDateFromEntries() {
+            const validEntries = entries.filter(e => e.date);
+            if (validEntries.length === 0) return null;
+            const dates = validEntries.map(e => new Date(e.date));
+            return new Date(Math.min(...dates));
+        }
+
+        // Get the latest date from entries (as a Date object)
+        function getEndDateFromEntries() {
+            const validEntries = entries.filter(e => e.date);
+            if (validEntries.length === 0) return null;
+            const dates = validEntries.map(e => new Date(e.date));
+            return new Date(Math.max(...dates));
+        }
+
+        // Fetch price for a specific date from MSCI API with auto-retry for weekends/holidays.
+        async function fetchPriceForDateOnce(originalDate) {
+            const maxRetries = 10; // Increased retries to handle weekends/holidays properly
+            const dateStr = originalDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+            try {
+                // Use local backend proxy instead of external CORS proxy
+                const url = `${MSCI_PROXY_BASE_URL}?date=${encodeURIComponent(dateStr)}&retries=${maxRetries}`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    method: "GET"
+                });
+
+                if (!response.ok) {
+                    throw new Error(`MSCI API error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                return result;
+
+            } catch (error) {
+                console.error(`MSCI API error (status ${error.message}) for date ${dateStr}`);
+                return { price: 'Not found', date: dateStr };
+            }
+        }
+
+        // Fetch MSCI ACWI index data - makes two separate calls for start and end dates, with validation.
+        async function fetchMsciData() {
+            const startDate = getStartDateFromEntries();
+            const endDate = getEndDateFromEntries();
+
+            if (!startDate || !endDate) {
+                console.error("No valid date range for MSCI data fetch");
+                updateKPIPrices(null, null);
+                updateBenchmarkCAGR(null, null);
+                return null;
+            }
+
+            // Fetch price for start date with retry logic.
+            const startPriceResult = await fetchPriceForDateOnce(startDate);
+
+            // If we still got "Not found" after retries, abort early.
+            if (!startPriceResult?.price || startPriceResult.price === 'Not found') {
+                console.warn(`MSCI start price not found for ${formatDate(startDate)}`);
+                updateKPIPrices(null, null);
+                updateBenchmarkCAGR(null, null);
+                return null;
+            }
+
+            // Fetch price for end date with retry logic.
+            const endPriceResult = await fetchPriceForDateOnce(endDate);
+
+            // If we still got "Not found" after retries, abort early.
+            if (!endPriceResult?.price || endPriceResult.price === 'Not found') {
+                console.warn(`MSCI end price not found for ${formatDate(endDate)}`);
+                updateKPIPrices(null, null);
+                updateBenchmarkCAGR(null, null);
+                return null;
+            }
+
+            // Store results globally for persistence
+            msciData = { startResult: startPriceResult, endResult: endPriceResult };
+
+            // Update price displays – they now contain validated price info.
+            updateKPIPrices(startPriceResult, endPriceResult);
+
+            // Calculate benchmark CAGR using the valid price data.
+            updateBenchmarkCAGR(startPriceResult, endPriceResult);
+
+            // Return the fetched data for any downstream listeners.
+            return msciData;
+        }
+
+        async function fetchMsciDataWithLoading() {
+            const benchmarkEl = document.getElementById('kpi-benchmark-cagr');
+            benchmarkEl.textContent = 'Loading...';
+            benchmarkEl.className = 'kpi-value';
+            await fetchMsciData();
+        }
+
+        async function fetchPriceForDate(originalDate, dateType) {
+            const maxRetries = 10;
+            let currentDate = new Date(originalDate);
+
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                const dateStr = currentDate.toISOString().split('T')[0];
+
+                try {
+                    // Use local backend proxy instead of external CORS proxy
+                    const url = `${MSCI_PROXY_BASE_URL}?date=${encodeURIComponent(dateStr)}&retries=${maxRetries}`;
+
+                    const response = await fetch(url, {
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        method: "GET"
+                    });
+
+                    if (!response.ok) {
+                        console.warn(`MSCI API error for ${dateType} date ${dateStr}: ${response.status}`);
+                        currentDate.setDate(currentDate.getDate() + 1);
+                        continue;
+                    }
+
+                    const data = await response.json();
+                    console.log(`MSCI data received for ${dateType} date ${dateStr}:`, data);
+
+                    // Check if there is a valid price in the response
+                    const result = extractPriceFromMSCI(data, dateStr);
+                    if (result.price && result.price !== 'Not found' && result.price !== 'N/A') {
+                        // Valid price found - stop the fetch process
+                        return result;
+                    }
+
+                    // No valid price in response - add 1 day and retry
+                    console.warn(`Price not found in MSCI response for ${dateType} date ${dateStr}`);
+                    currentDate.setDate(currentDate.getDate() + 1);
+
+                } catch (error) {
+                    console.error(`MSCI API error for ${dateType} date ${dateStr} (attempt ${attempt + 1}/${maxRetries + 1}):`, error);
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+            }
+
+            // All retries exhausted
+            return { price: `Error: Failed after ${maxRetries + 1} attempts`, date: null };
+        }
+
+        function extractPriceFromMSCI(data, dateStr) {
+            if (!data || !data.indexes || !data.indexes.INDEX_LEVELS || !Array.isArray(data.indexes.INDEX_LEVELS)) {
+                return { price: 'Not found', date: null };
+            }
+
+            // Convert dateStr to YYYYMMDD format and look in INDEX_LEVELS
+            const dateNum = parseInt(dateStr.replace(/-/g, ''), 10);
+
+            for (const level of data.indexes.INDEX_LEVELS) {
+                if (level.calc_date === dateNum) {
+                    // Convert calc_date back to YYYY-MM-DD format for display
+                    const dateStrDisplay = String(level.calc_date).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+                    return { price: level.level_eod || 'N/A', date: dateStrDisplay };
+                }
+            }
+
+            return { price: 'Not found', date: null };
+        }
+
+        function updateKPIPrices(startResult, endResult) {
+            const startPrice = startResult?.price;
+            const startDate = startResult?.date;
+            const endPrice = endResult?.price;
+            const endDate = endResult?.date;
+
+            if (startPrice === 'Error' || startPrice === 'Not found' || startPrice === 'N/A' || !startPrice) {
+                document.getElementById('kpi-start-price').textContent = 'No Data';
+            } else {
+                document.getElementById('kpi-start-price').textContent = startDate ? `${formatNumber(startPrice)} $ (${startDate})` : `${formatNumber(startPrice)} $`;
+            }
+            if (endPrice === 'Error' || endPrice === 'Not found' || endPrice === 'N/A' || !endPrice) {
+                document.getElementById('kpi-end-price').textContent = 'No Data';
+            } else {
+                document.getElementById('kpi-end-price').textContent = endDate ? `${formatNumber(endPrice)} $ (${endDate})` : `${formatNumber(endPrice)} $`;
+            }
+        }
+
+        function updateBenchmarkCAGR(startPrice, endPrice, years) {
+            const benchmarkEl = document.getElementById('kpi-benchmark-cagr');
+
+            if (!startPrice || !endPrice || !years || years <= 0) {
+                benchmarkEl.textContent = 'n/a';
+                benchmarkEl.className = 'kpi-value n/a';
+                return;
+            }
+
+            const startPriceNum = parseFloat(startPrice);
+            const endPriceNum = parseFloat(endPrice);
+
+            if (!isNaN(startPriceNum) && !isNaN(endPriceNum) && startPriceNum > 0 && endPriceNum > 0) {
+                const cagr = (Math.pow(endPriceNum / startPriceNum, 1 / years) - 1) * 100;
+                benchmarkEl.textContent = `${formatNumber(cagr)}%`;
+                benchmarkEl.className = `kpi-value ${cagr >= 0 ? 'positive' : 'negative'}`;
+            } else {
+                benchmarkEl.textContent = 'n/a';
+                benchmarkEl.className = 'kpi-value n/a';
+            }
+        }
+
+        // Initialize with one empty row
+        document.addEventListener('DOMContentLoaded', () => {
+            addEntry();
+            updateKPIs();
+        });
+
+        function getCurrency() {
+            return document.getElementById('currency').value;
+        }
+
+        function getDecimalSeparator() {
+            return document.getElementById('decimal-separator').value;
+        }
+
+        function getThousandsSeparator() {
+            return document.getElementById('thousands-separator').value;
+        }
+
+        function escapeRegExp(value) {
+            return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function parseLocalizedAmount(value) {
+            if (typeof value === 'number') return value;
+
+            const decimalSeparator = getDecimalSeparator();
+            const thousandsSeparator = getThousandsSeparator();
+            let normalized = String(value).trim().replace(/\s/g, thousandsSeparator === ' ' ? '' : '');
+
+            if (thousandsSeparator) {
+                normalized = normalized.replace(new RegExp(escapeRegExp(thousandsSeparator), 'g'), '');
+            }
+            if (decimalSeparator !== '.') {
+                normalized = normalized.replace(new RegExp(escapeRegExp(decimalSeparator), 'g'), '.');
+            }
+
+            return parseFloat(normalized);
+        }
+
+        function formatCurrency(value) {
+            const currency = getCurrency();
+            const currencyPart = new Intl.NumberFormat('en', {
+                style: 'currency',
+                currency: currency,
+                currencyDisplay: 'narrowSymbol'
+            }).formatToParts(0).find(part => part.type === 'currency');
+            const symbol = currencyPart ? currencyPart.value : currency;
+            return `${formatNumber(value, 2)} ${symbol}`;
+        }
+
+        function formatNumber(value, decimals = 2) {
+            if (!Number.isFinite(Number(value))) return '';
+
+            const decimalSeparator = getDecimalSeparator();
+            const thousandsSeparator = getThousandsSeparator();
+            const fixed = Number(value).toFixed(decimals);
+            const [integerPart, fractionPart] = fixed.split('.');
+            const sign = integerPart.startsWith('-') ? '-' : '';
+            const digits = sign ? integerPart.slice(1) : integerPart;
+            const grouped = thousandsSeparator
+                ? digits.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator)
+                : digits;
+
+            return decimals > 0
+                ? `${sign}${grouped}${decimalSeparator}${fractionPart}`
+                : `${sign}${grouped}`;
+        }
+
+        function formatDate(date) {
+            if (!date) return '-';
+            return new Intl.DateTimeFormat('de-DE', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                timeZone: 'UTC'
+            }).format(date);
+        }
+
+        function addEntry(type = 'pay-in', date = '', amount = '') {
+            entryId++;
+            const id = entryId;
+            entries.push({ id, type, date, amount });
+
+            const tbody = document.getElementById('entries-body');
+            const row = document.createElement('tr');
+            row.id = `row-${id}`;
+            row.innerHTML = `
+                <td>
+                    <select class="type-select ${type}" onchange="updateEntryType(${id}, this.value)">
+                        <option value="pay-in" ${type === 'pay-in' ? 'selected' : ''}>Pay In</option>
+                        <option value="pay-out" ${type === 'pay-out' ? 'selected' : ''}>Pay Out</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="date" value="${date}" onchange="updateEntryDate(${id}, this.value)">
+                </td>
+                <td>
+                    <input type="text" inputmode="decimal" class="amount-input ${type === 'pay-in' ? 'amount-pay-in' : 'amount-pay-out'}"
+                           value="${amount === '' ? '' : formatNumber(amount, 2)}" placeholder="${formatNumber(0, 2)}"
+                           onchange="updateEntryAmount(${id}, this.value)" onblur="formatAmountInput(this, ${id})">
+                </td>
+                <td>
+                    <button class="delete-btn" onclick="deleteEntry(${id})">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                        </svg>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+
+            // Apply type class to select
+            const select = row.querySelector('.type-select');
+            applyTypeClass(select, type);
+
+            if (date || amount) {
+                updateKPIs();
+            }
+        }
+
+        function applyTypeClass(select, type) {
+            select.classList.remove('pay-in', 'pay-out');
+            select.classList.add(type);
+        }
+
+        function updateEntryType(id, type) {
+            const entry = entries.find(e => e.id === id);
+            if (entry) {
+                entry.type = type;
+                const row = document.getElementById(`row-${id}`);
+                const select = row.querySelector('.type-select');
+                const amountInput = row.querySelector('.amount-input');
+
+                applyTypeClass(select, type);
+                amountInput.classList.remove('amount-pay-in', 'amount-pay-out');
+                amountInput.classList.add(type === 'pay-in' ? 'amount-pay-in' : 'amount-pay-out');
+                updateKPIs();
+            }
+        }
+
+        function updateEntryDate(id, date) {
+            const entry = entries.find(e => e.id === id);
+            if (entry) {
+                entry.date = date;
+                updateKPIs();
+            }
+        }
+
+        function updateEntryAmount(id, amount) {
+            const entry = entries.find(e => e.id === id);
+            if (entry) {
+                const parsedAmount = parseLocalizedAmount(amount);
+                entry.amount = Number.isFinite(parsedAmount) ? parsedAmount : 0;
+                updateKPIs();
+            }
+        }
+
+        function formatAmountInput(input, id) {
+            const entry = entries.find(e => e.id === id);
+            input.value = entry && Number.isFinite(entry.amount) ? formatNumber(entry.amount, 2) : '';
+        }
+
+        function refreshAmountInputs() {
+            entries.forEach(entry => {
+                const row = document.getElementById(`row-${entry.id}`);
+                const input = row && row.querySelector('.amount-input');
+                if (input) {
+                    input.value = entry.amount === '' ? '' : formatNumber(entry.amount, 2);
+                    input.placeholder = formatNumber(0, 2);
+                }
+            });
+        }
+
+        function deleteEntry(id) {
+            entries = entries.filter(e => e.id !== id);
+            const row = document.getElementById(`row-${id}`);
+            if (row) row.remove();
+            updateKPIs();
+        }
+
+        // Compute all KPIs from the current entries. Returns null when there is
+        // not enough data to calculate anything.
+        function computeKPIs() {
+            const validEntries = entries.filter(e => e.date && e.amount > 0);
+            if (validEntries.length === 0) return null;
+
+            // Convert entries to payment data
+            // Pay In = positive (money going into investment)
+            // Pay Out = negative (money coming out of investment)
+            const payments = validEntries.map(e => ({
+                date: new Date(e.date),
+                amount: e.type === 'pay-in' ? Math.abs(e.amount) : -Math.abs(e.amount)
+            }));
+
+            // Sort by date
+            payments.sort((a, b) => a.date - b.date);
+
+            const startDate = new Date(Math.min(...payments.map(p => p.date)));
+            const endDate = new Date(Math.max(...payments.map(p => p.date)));
+
+            // Total days in investment period
+            const totalDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
+
+            // Investment period in years
+            const periodYears = totalDays / 365;
+
+            // Average Capital Commitment calculation
+            // For each payment: (days from payment to end) / total_days * amount
+            let weightedSum = 0;
+            for (const payment of payments) {
+                const daysToEnd = (endDate - payment.date) / (1000 * 60 * 60 * 24);
+                const weight = daysToEnd / totalDays;
+                weightedSum += weight * payment.amount;
+            }
+            const avgCapitalCommitment = Math.abs(weightedSum);
+
+            // Total Return = -SUM(all payments) - pay-ins are positive, pay-outs negative
+            // (negate so a profitable investment shows as a positive return)
+            const totalReturn = -payments.reduce((sum, p) => sum + p.amount, 0);
+
+            // Total Return %
+            const totalReturnPct = avgCapitalCommitment > 0 ? (totalReturn / avgCapitalCommitment) * 100 : 0;
+
+            // Imputed Annual Return (CAGR - Compound Annual Growth Rate)
+            // Formula: ((avgCapital + totalReturn) / avgCapital)^(1/years) - 1
+            let annualReturn = 0;
+            if (avgCapitalCommitment > 0 && periodYears > 0) {
+                if (periodYears >= 1) {
+                    annualReturn = (Math.pow((avgCapitalCommitment + totalReturn) / avgCapitalCommitment, 1 / periodYears) - 1) * 100;
+                } else {
+                    // For periods less than 1 year, use simple return
+                    annualReturn = totalReturnPct / periodYears;
+                }
+            }
+
+            return {
+                startDate,
+                endDate,
+                periodYears,
+                avgCapitalCommitment,
+                totalReturn,
+                totalReturnPct,
+                annualReturn
+            };
+        }
+
+        async function updateKPIs() {
+            const currency = getCurrency();
+
+            // Update currency display
+            document.querySelectorAll('.currency-display').forEach(el => {
+                el.textContent = currency;
+            });
+
+            const kpis = computeKPIs();
+
+            if (!kpis) {
+                document.getElementById('kpi-start-date').textContent = '-';
+                document.getElementById('kpi-end-date').textContent = '-';
+                document.getElementById('kpi-period').textContent = '- years';
+                document.getElementById('kpi-avg-capital').textContent = `- ${currency}`;
+                document.getElementById('kpi-total-return').textContent = `- ${currency}`;
+                document.getElementById('kpi-total-return').className = 'kpi-value';
+                document.getElementById('kpi-total-return-pct').textContent = '-%';
+                document.getElementById('kpi-total-return-pct').className = 'kpi-value';
+                document.getElementById('kpi-annual-return').textContent = '-%';
+                document.getElementById('kpi-annual-return').className = 'kpi-value';
+                document.getElementById('kpi-benchmark-cagr').textContent = 'n/a';
+                document.getElementById('kpi-benchmark-cagr').className = 'kpi-value n/a';
+                return;
+            }
+
+            // Update display
+            document.getElementById('kpi-start-date').textContent = formatDate(kpis.startDate);
+            document.getElementById('kpi-end-date').textContent = formatDate(kpis.endDate);
+            document.getElementById('kpi-period').textContent = `${formatNumber(kpis.periodYears, 2)} years`;
+            document.getElementById('kpi-avg-capital').textContent = formatCurrency(kpis.avgCapitalCommitment);
+
+            const totalReturnEl = document.getElementById('kpi-total-return');
+            totalReturnEl.textContent = formatCurrency(kpis.totalReturn);
+            totalReturnEl.className = `kpi-value ${kpis.totalReturn >= 0 ? 'positive' : 'negative'}`;
+
+            const totalReturnPctEl = document.getElementById('kpi-total-return-pct');
+            totalReturnPctEl.textContent = `${formatNumber(kpis.totalReturnPct)}%`;
+            totalReturnPctEl.className = `kpi-value ${kpis.totalReturnPct >= 0 ? 'positive' : 'negative'}`;
+
+            const annualReturnEl = document.getElementById('kpi-annual-return');
+            annualReturnEl.textContent = `${formatNumber(kpis.annualReturn)}%`;
+            annualReturnEl.className = `kpi-value ${kpis.annualReturn >= 0 ? 'positive' : 'negative'}`;
+
+            // Fetch and calculate benchmark
+            const benchmarkEl = document.getElementById('kpi-benchmark-cagr');
+            benchmarkEl.textContent = 'Loading...';
+            benchmarkEl.className = 'kpi-value';
+
+            try {
+                const startDate = formatDate(kpis.startDate);
+                const endDate = formatDate(kpis.endDate);
+
+                const msciData = await fetchMsciData();
+
+                // Validate that we received both start and end results with prices
+                if (!msciData) {
+                    console.warn('MSCI data fetch was aborted');
+                    benchmarkEl.textContent = 'n/a';
+                    benchmarkEl.className = 'kpi-value n/a';
+                    return;
+                }
+                if (!msciData.startResult || !msciData.startResult.price) {
+                    console.warn('MSCI start result missing or invalid');
+                    benchmarkEl.textContent = 'n/a';
+                    benchmarkEl.className = 'kpi-value n/a';
+                    return;
+                }
+                if (!msciData.endResult || !msciData.endResult.price) {
+                    console.warn('MSCI end result missing or invalid');
+                    benchmarkEl.textContent = 'n/a';
+                    benchmarkEl.className = 'kpi-value n/a';
+                    return;
+                }
+
+                const startPrice = parseFloat(msciData.startResult.price);
+                const endPrice = parseFloat(msciData.endResult.price);
+
+                if (!isNaN(startPrice) && !isNaN(endPrice) && startPrice > 0 && endPrice > 0) {
+                    // Calculate CAGR: (End Value / Start Value)^(1/years) - 1
+                    const years = kpis.periodYears;
+                    if (years > 0) {
+                        const cagr = (Math.pow(endPrice / startPrice, 1 / years) - 1) * 100;
+                        benchmarkEl.textContent = `${formatNumber(cagr)}%`;
+                        benchmarkEl.className = `kpi-value ${cagr >= 0 ? 'positive' : 'negative'}`;
+                    } else {
+                        benchmarkEl.textContent = 'Error: Invalid period';
+                        benchmarkEl.className = 'kpi-value negative';
+                    }
+                } else {
+                    benchmarkEl.textContent = 'Error: Invalid price data';
+                    benchmarkEl.className = 'kpi-value negative';
+                }
+            } catch (error) {
+                console.error('Error updating benchmark:', error);
+                benchmarkEl.textContent = 'Error: ' + error.message;
+                benchmarkEl.className = 'kpi-value negative';
+            }
+        }
+
+        // Currency and separator change listeners
+        document.getElementById('currency').addEventListener('change', updateKPIs);
+        document.getElementById('decimal-separator').addEventListener('change', () => {
+            if (getDecimalSeparator() === getThousandsSeparator()) {
+                document.getElementById('thousands-separator').value = getDecimalSeparator() === ',' ? '.' : ',';
+            }
+            refreshAmountInputs();
+            updateKPIs();
+        });
+        document.getElementById('thousands-separator').addEventListener('change', () => {
+            if (getDecimalSeparator() === getThousandsSeparator()) {
+                document.getElementById('decimal-separator').value = getThousandsSeparator() === ',' ? '.' : ',';
+            }
+            refreshAmountInputs();
+            updateKPIs();
+        });
+
+        // Download entries + KPIs as XLS (pay in = positive, pay out = negative)
+        function downloadData() {
+            // Column layout:
+            //   A: Date, B: Amount  (entries, from row 2 down)
+            //   D-J (row 1): calculated KPIs
+            //     D Start Date, E End Date, F Period (years), G Avg Capital,
+            //     H Total Return, I Total Return %, J Imputed Annual Return %
+            const rows = [];
+            const kpis = computeKPIs();
+            if (kpis) {
+                rows.push([
+                    'Date', 'Amount',
+                    null,
+                    formatDate(kpis.startDate),
+                    formatDate(kpis.endDate),
+                    kpis.periodYears,
+                    kpis.avgCapitalCommitment,
+                    kpis.totalReturn,
+                    kpis.totalReturnPct,
+                    kpis.annualReturn
+                ]);
+            } else {
+                rows.push(['Date', 'Amount']);
+            }
+
+            for (const e of entries) {
+                if (!e.date) continue;
+                const sign = e.type === 'pay-in' ? 1 : -1;
+                const amount = e.amount === '' || !Number.isFinite(Number(e.amount)) ? 0 : Number(e.amount);
+                rows.push([e.date, sign * Math.abs(amount)]);
+            }
+
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            ws['!cols'] = [
+                { wch: 14 }, // A Date
+                { wch: 12 }, // B Amount
+                { wch: 3 },  // C (gap)
+                { wch: 12 }, // D Start Date
+                { wch: 12 }, // E End Date
+                { wch: 14 }, // F Period
+                { wch: 16 }, // G Avg Capital
+                { wch: 14 }, // H Total Return
+                { wch: 14 }, // I Total Return %
+                { wch: 18 }  // J Imputed Annual Return
+            ];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Payments');
+
+            const format = (document.getElementById('download-format') || {}).value === 'xls' ? 'xls' : 'xlsx';
+            if (format === 'xls') {
+                XLSX.writeFile(wb, 'investment-calculator.xls', { bookType: 'biff8' });
+            } else {
+                XLSX.writeFile(wb, 'investment-calculator.xlsx', { bookType: 'xlsx' });
+            }
+        }
+
+        // File upload handler
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Only .xls / .xlsx files are supported
+            const name = (file.name || '').toLowerCase();
+            if (!name.endsWith('.xls') && !name.endsWith('.xlsx')) {
+                alert('Please upload an .xls or .xlsx file. CSV is not supported.');
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
+
+                // Clear existing entries
+                entries = [];
+                document.getElementById('entries-body').innerHTML = '';
+                entryId = 0;
+
+                // Process rows
+                for (const row of rows) {
+                    if (!row || row.length < 2) continue;
+
+                    let dateValue = row[0];
+                    let amountValue = row[1];
+
+                    // Skip header rows
+                    if (typeof dateValue === 'string' && dateValue.toLowerCase().includes('date')) continue;
+                    if (typeof amountValue === 'string' && amountValue.toLowerCase().includes('amount')) continue;
+
+                    // Parse date
+                    let date = '';
+                    if (dateValue instanceof Date) {
+                        // Excel date cells (with cellDates: true) are converted to local Date objects
+                        // Extract the DATE portion only, ignoring any timezone shift
+                        // Format directly to YYYY-MM-DD to preserve the calendar date
+                        const y = dateValue.getFullYear();
+                        const m = String(dateValue.getMonth() + 1).padStart(2, '0');
+                        const d = String(dateValue.getDate()).padStart(2, '0');
+                        date = `${y}-${m}-${d}`;
+                    } else if (typeof dateValue === 'number') {
+                        // Excel date serial number - convert to exact date
+                        // Excel uses 1900 date system with a bug (no 1900-02-29)
+                        // For dates after 1900-02-28, Excel counts 1900 as leap year
+                        const excelSerial = dateValue;
+                        // Correct for Excel's 1900 leap year bug (dates after 1900-02-28 need -1 day)
+                        const correctedSerial = excelSerial > 60 ? excelSerial - 1 : excelSerial;
+                        // Convert to milliseconds since Unix epoch (1970-01-01 UTC)
+                        const ms = (correctedSerial - 25569) * 86400 * 1000;
+                        const jsDate = new Date(ms);
+                        const year = jsDate.getUTCFullYear();
+                        const month = String(jsDate.getUTCMonth() + 1).padStart(2, '0');
+                        const day = String(jsDate.getUTCDate()).padStart(2, '0');
+                        date = `${year}-${month}-${day}`;
+                    } else if (typeof dateValue === 'string') {
+                        // Try German format DD.MM.YYYY
+                        const germanMatch = dateValue.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+                        if (germanMatch) {
+                            date = `${germanMatch[3]}-${germanMatch[2].padStart(2, '0')}-${germanMatch[1].padStart(2, '0')}`;
+                        } else {
+                            // Try ISO format or other standard formats
+                            const parsed = new Date(dateValue);
+                            if (!isNaN(parsed)) {
+                                date = parsed.toISOString().split('T')[0];
+                            }
+                        }
+                    }
+
+                    // Parse amount using the selected decimal and thousands separators
+                    const rawAmount = parseLocalizedAmount(amountValue);
+                    const amount = Math.abs(rawAmount);
+
+                    if (date && Number.isFinite(rawAmount) && amount > 0) {
+                        // Determine type: positive = pay-in, negative = pay-out
+                        const type = rawAmount < 0 ? 'pay-out' : 'pay-in';
+                        addEntry(type, date, amount);
+                    }
+                }
+
+                // Add one empty row if no entries were added
+                if (entries.length === 0) {
+                    addEntry();
+                }
+
+                updateKPIs();
+            };
+
+            reader.readAsArrayBuffer(file);
+            event.target.value = '';
+        }
+    </script>
+    <script>
+        // Auto-fetch MSCI prices when investment start/end dates change
+        function updateMscDatePrices() {
+            fetchMsciDataWithLoading();
+        }
+
+        // MSCI prices update automatically via updateKPIs() -> fetchMsciData()
+        // whenever entries are added, edited, or deleted (which changes the
+        // calculated Investment Start Date and Investment End Date).
+    </script>
+</body>
+</html>
