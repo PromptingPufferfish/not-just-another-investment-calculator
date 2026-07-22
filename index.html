@@ -589,11 +589,11 @@
                         <div class="kpi-value" id="kpi-benchmark-cagr">n/a</div>
                     </div>
                     <div class="kpi-item">
-                        <div class="kpi-label">MSCI ACWI Price at Investment Start Date</div>
+                        <div class="kpi-label">MSCI ACWI level at Investment Start Date (closest match)</div>
                         <div class="kpi-value" id="kpi-start-price">-</div>
                     </div>
                     <div class="kpi-item">
-                        <div class="kpi-label">MSCI ACWI Price at Investment End Date</div>
+                        <div class="kpi-label">MSCI ACWI level at Investment End Date (closest match)</div>
                         <div class="kpi-value" id="kpi-end-price">-</div>
                     </div>
                 </div>
@@ -817,12 +817,12 @@
             if (startPrice === 'Error' || startPrice === 'Not found' || startPrice === 'N/A' || !startPrice) {
                 document.getElementById('kpi-start-price').textContent = 'No Data';
             } else {
-                document.getElementById('kpi-start-price').textContent = startDate ? `${formatNumber(startPrice)} $ (${startDate})` : `${formatNumber(startPrice)} $`;
+                document.getElementById('kpi-start-price').textContent = startDate ? `${formatNumber(startPrice)} (${startDate})` : `${formatNumber(startPrice)}`;
             }
             if (endPrice === 'Error' || endPrice === 'Not found' || endPrice === 'N/A' || !endPrice) {
                 document.getElementById('kpi-end-price').textContent = 'No Data';
             } else {
-                document.getElementById('kpi-end-price').textContent = endDate ? `${formatNumber(endPrice)} $ (${endDate})` : `${formatNumber(endPrice)} $`;
+                document.getElementById('kpi-end-price').textContent = endDate ? `${formatNumber(endPrice)} (${endDate})` : `${formatNumber(endPrice)}`;
             }
         }
 
